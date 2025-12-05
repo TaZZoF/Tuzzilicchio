@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  tuzzilicchio:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ./server:/app/server
+      - ./public:/app/public
+    restart: unless-stopped
+
