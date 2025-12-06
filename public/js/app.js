@@ -11,17 +11,23 @@ const useAudio = () => useContext(AudioContext);
 // Sound effect URLs (using Web Audio API with oscillators as fallback)
 const createAudioContext = () => {
     const AudioCtor = window.AudioContext || window.webkitAudioContext;
+
     if (!AudioCtor) {
-        console.warn('Web Audio API not supported in this browser. Sound effects disabled.');
+        console.warn('Web Audio API not supported (AudioContext not found).');
         return null;
     }
+
+    if (typeof AudioCtor !== 'function') {
+        console.warn('Web Audio API found but not a constructor. Type:', typeof AudioCtor);
+        return null;
+    }
+
     try {
         const ctx = new AudioCtor();
-        console.log('AudioContext created successfully. State:', ctx.state);
+        console.log('AudioContext created successfully.');
         return ctx;
     } catch (e) {
         console.error('Failed to initialize AudioContext:', e);
-        // Fallback or retry logic if needed, but usually this is fatal for audio
         return null;
     }
 };
