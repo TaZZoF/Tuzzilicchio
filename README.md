@@ -1,205 +1,213 @@
-# 🃏 Tuzzilicchio - Gioco di Carte Multiplayer
+# 🃏 Tuzzilicchio - Multiplayer Card Game
 
-Un gioco di carte web-based basato sulla Scopa napoletana con varianti speciali, sviluppato con Node.js, Express, Socket.io e React.
+A web-based card game based on the Neapolitan "Scopa" with special variants, developed using Node.js, Express, Socket.io, and React.
 
 ![Tuzzilicchio](https://img.shields.io/badge/Game-Tuzzilicchio-green)
 ![Node.js](https://img.shields.io/badge/Node.js-18+-brightgreen)
 ![Docker](https://img.shields.io/badge/Docker-Ready-blue)
 
-## 📋 Indice
+## 📋 Table of Contents
 
-- [Caratteristiche](#-caratteristiche)
-- [Regole del Gioco](#-regole-del-gioco)
-- [Installazione](#-installazione)
-- [Avvio](#-avvio)
-- [Struttura del Progetto](#-struttura-del-progetto)
+- [Features](#-features)
+- [Game Rules](#-game-rules)
+- [Installation](#-installation)
+- [Usage](#-usage)
+- [Project Structure](#-project-structure)
 
-## ✨ Caratteristiche
+## ✨ Features
 
-- **Multiplayer Real-time**: 2-4 giocatori tramite Socket.io
-- **Lobby System**: Crea o unisciti a stanze con codice
-- **UI Responsive**: Funziona su desktop e mobile
-- **Animazioni Fluide**: Distribuzione carte e notifiche
-- **Regole Complete**: Scopa + varianti Tuzzilicchio
+- **Real-time Multiplayer**: 2-4 players via Socket.io
+- **High Availability**: Auto-recovery using Node.js Cluster (Single-worker Supervisor)
+- **Modern UI/UX**: optimized for mobile and desktop
+- **Optimized Assets**: WebP card images for fast loading
+- **Lobby System**: Create or join rooms with a code
+- **Smooth Animations**: Card dealing, playing, and capturing
+- **Complete Rules**: Standard Scopa + Tuzzilicchio variants
 
-## 🎴 Regole del Gioco
+## 🎴 Game Rules
 
-### Mazzo
-- 40 carte napoletane (Coppe, Denari, Bastoni, Spade)
-- Valori: 1-7, Fante(8), Cavallo(9), Re(10)
+### Deck
+- 40 Neapolitan cards (Cups, Coins, Clubs, Swords)
+- Values: 1-7, Knave(8), Knight(9), King(10)
 
 ### Setup
-- 2-4 giocatori
-- 3 carte a testa, 4 sul tavolo
-- Nuove 3 carte quando si esauriscono
+- 2-4 players
+- 3 cards each, 4 on the table at start
+- Deal 3 more cards when hands are empty
 
-### Meccaniche di Presa
+### Capture Mechanics
 
-#### Presa Classica
-- Prendi una carta con lo stesso valore
-- Prendi carte che sommano al valore giocato
+#### Classic Capture
+- Take a card of the same value
+- Take multiple cards that sum up to the played card's value
 
-#### Asso Piglia Tutto 🃏
-- L'Asso prende TUTTE le carte dal tavolo
-- Se il tavolo è vuoto, l'Asso non prende nulla
+#### Asso Piglia Tutto (Ace Takes All) 🃏
+- Playing an Ace takes ALL cards on the table
+- If the table is empty, the Ace takes nothing
 
-#### Accoppia 11 (Ciapachinze) 🎯
-- Puoi prendere una carta se insieme sommano 11
-- Es: giochi 4 → prendi 7
+#### Accoppia 11 (Pair 11 / Ciapachinze) 🎯
+- You can capture a card if the sum of your card and the table card is 11
+- E.g., Play 4 → Capture 7
 
 #### Scopa 🧹
-- Pulire il tavolo = 1 punto
-- (Non conta se l'Asso pulisce all'ultima mano)
+- Clearing the table awards 1 point
+- (Does not count if captured by Ace in the last hand)
 
-### Tozzolo - La Meccanica Speciale! 👊
+### Tozzolo - Special Mechanic! 👊
 
-**Trigger**: Avere in mano una combinazione di Asso, Due, Tre
+**Trigger**: Holding a combination of Ace, Two, and Three in hand.
 
-- **Buongioco**: Coppia stesso valore O stesso seme
-- **Napoli**: Tris stesso valore O stesso seme
+- **Buongioco**: Pair of same value OR same suit
+- **Napoli**: Three of same value OR same suit
 
-**Azione**: Clicca "Bussa per Tozzolo!" per dichiararlo
+**Action**: Click "Bussa per Tozzolo!" (Knock for Tozzolo) to declare it.
 
-**Valore**: Ogni Tozzolo = **+3 punti**
+**Value**: Each Tozzolo declared = **+3 points**
 
-### Punteggio Fine Round
+### End of Round Scoring
 
-| Categoria | Punti |
+| Category | Points |
 |-----------|-------|
-| Scope | 1 ciascuna |
-| Carte (>20) | 1 |
-| Denari (>5) | 1 |
+| Scopa (Sweep) | 1 each |
+| Cards (>20) | 1 |
+| Coins (Denari) (>5) | 1 |
 | Settebello (7♦) | 1 |
-| Primiera (migliore) | 1 |
-| Tozzoli | 3 ciascuno |
+| Primiera (Best prime) | 1 |
+| Tozzoli | 3 each |
 
-**Vittoria**: Primo a raggiungere **31 punti**
+**Victory**: First player to reach **31 points**.
 
-## 🚀 Installazione
+## 🚀 Installation
 
-### Prerequisiti
-- Node.js 18+ oppure Docker
+### Prerequisites
+- Node.js 18+ or Docker
 
-### Metodo 1: Node.js
+### Method 1: Node.js
 
 ```bash
-# Clona il repository
+# Clone the repository
 git clone <repo-url>
 cd tuzzilicchio
 
-# Installa dipendenze
+# Install dependencies
 npm install
 
-# Avvia il server
+# Start the server
 npm start
 ```
 
-### Metodo 2: Docker
+### Method 2: Docker
 
 ```bash
-# Build e avvio con Docker Compose
+# Build and start with Docker Compose
 docker-compose up --build
 
-# Oppure in background
+# Or in background
 docker-compose up -d --build
 ```
 
-## 🎮 Avvio
+## 🎮 Usage
 
-1. Apri il browser su `http://localhost:3000`
-2. Inserisci il tuo nome
-3. **Crea** una nuova stanza o **Unisciti** con un codice
-4. Aspetta altri giocatori (min 2)
-5. Tutti cliccano "Sono Pronto!"
-6. Gioca! 🎴
+1. Open your browser at `http://localhost:3000`
+2. Enter your name
+3. **Create** a new room or **Join** one with a code
+4. Wait for other players (min 2)
+5. Everyone clicks "Ready!"
+6. Enjoy the game! 🎴
 
-## 📁 Struttura del Progetto
+## 📁 Project Structure
 
 ```
 tuzzilicchio/
-├── docker-compose.yml      # Configurazione Docker
-├── Dockerfile              # Immagine Docker
-├── package.json            # Dipendenze Node.js
-├── README.md               # Questa documentazione
+├── docker-compose.yml      # Docker Configuration
+├── Dockerfile              # Docker Image
+├── package.json            # Node.js Dependencies
+├── README.md               # Documentation
 ├── server/
-│   ├── index.js            # Server Express + Socket.io
-│   └── gameLogic.js        # Logica del gioco completa
+│   ├── index.js            # Server Entry (HA Supervisor)
+│   └── gameLogic.js        # Core Game Logic
 └── public/
-    └── index.html          # Frontend React (SPA)
+    ├── index.html          # HTML Entry Point
+    ├── css/
+    │   └── style.css       # External Stylesheet with Modern UI
+    ├── js/
+    │   └── app.js          # React Application Logic
+    └── assets/
+        └── cards/          # WebP Card Images
 ```
 
-### Componenti Principali
+### Main Components
 
 #### Backend (`server/`)
 
 **`gameLogic.js`**
-- `TuzzilicchioGame`: Classe principale del gioco
-- `Player`: Gestione giocatori
-- `Deck`: Mazzo e distribuzione
-- `Card`: Rappresentazione carte
+- `TuzzilicchioGame`: Main game class
+- `Player`: Player management
+- `Deck`: Deck management and shuffling
+- `Card`: Card representation
 
 **`index.js`**
-- Server Express per file statici
-- Socket.io per real-time
-- Gestione stanze e eventi
+- Express server for static files
+- Socket.io for real-time events
+- **Cluster Implementation**: Monitors worker process and restarts on failure
+- Room and event management
 
-#### Frontend (`public/index.html`)
+#### Frontend (`public/`)
 
-Componenti React:
-- `Lobby`: Creazione/join stanze
-- `WaitingRoom`: Attesa giocatori
-- `GameTable`: Tavolo da gioco principale
-- `Card`: Visualizzazione carta
-- `RoundEnd`: Punteggi fine round
+- **`css/style.css`**: Contains all styling, animations, and responsive design rules.
+- **`js/app.js`**: Contains the React code (Lobby, GameTable, WaitingRoom, Logic).
+- **`index.html`**: Clean entry point linking CSS and JS.
 
-## 🔧 Configurazione
+## 🔧 Configuration
 
-### Variabili d'Ambiente
+### Environment Variables
 
-| Variabile | Default | Descrizione |
+| Variable | Default | Description |
 |-----------|---------|-------------|
-| `PORT` | 3000 | Porta del server |
-| `NODE_ENV` | development | Ambiente |
+| `PORT` | 3000 | Server Port |
+| `NODE_ENV` | development | Environment |
 
-### Personalizzazione
+### Customization
 
-Per usare immagini delle carte reali, posizionale in:
+To use custom card images, place them in:
 ```
-public/assets/cards/1_denari.png
-public/assets/cards/2_coppe.png
+public/assets/cards/1D.webp
+public/assets/cards/2C.webp
 ...
 ```
+(Using value + Suit Initial: D=Denari, C=Coppe, B=Bastoni, S=Spade)
 
 ## 🐛 Troubleshooting
 
-### Il gioco non si avvia
-- Verifica che la porta 3000 sia libera
-- Controlla i log: `docker-compose logs`
+### Game doesn't start
+- Check if port 3000 is free
+- Check logs: `docker-compose logs`
 
-### Disconnessioni frequenti
-- Verifica la connessione di rete
-- Il server mantiene lo stato per riconnessioni
+### Frequent Disconnections
+- Check network connection
+- Server maintains state for reconnections (unless critical crash reshuffles worker)
 
-### Carte non si vedono
-- Pulisci la cache del browser
-- Ricarica la pagina (F5)
+### Cards not visible
+- Clear browser cache
+- Reload (F5)
 
-## 📝 Note di Sviluppo
+## 📝 Development Notes
 
-### Sincronizzazione Stati
-- Il server è l'unica fonte di verità
-- Ogni azione viene validata server-side
-- Lo stato viene broadcast a tutti i client
+### State Synchronization
+- Server is the single source of truth
+- Every action is validated server-side
+- State is broadcast to all clients
 
-### Anti-Cheat
-- Le carte in mano sono visibili solo al proprietario
-- Le mosse vengono validate lato server
-- Nessun dato sensibile esposto al client
+### High Availability
+- The server uses the Node.js `cluster` module.
+- The Primary process acts as a supervisor.
+- A single Worker process handles game logic.
+- If the Worker crashes, it is automatically restarted to ensure service continuity (Note: in-memory state is reset on crash in this version).
 
-## 📄 Licenza
+## 📄 License
 
-MIT License - Usa liberamente questo progetto!
+MIT License - Free to use!
 
 ---
 
-**Buon divertimento con Tuzzilicchio!** 🃏🎴🧹
+**Have fun with Tuzzilicchio!** 🃏🎴🧹
