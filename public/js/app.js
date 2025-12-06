@@ -10,35 +10,52 @@ const useAudio = () => useContext(AudioContext);
 // Sound effect URLs (using Web Audio API with oscillators as fallback)
 // Sound effect URLs (using Web Audio API with oscillators as fallback)
 const createAudioContext = () => {
-    const globalAC = window.AudioContext || window.webkitAudioContext;
+    // 1. Try standard window constructors first
+    const ctors = [
+        window.AudioContext,
+        window.webkitAudioContext
+    ];
 
-    if (!globalAC) {
-        console.warn('Web Audio API not supported (Global undefined).');
-        return null;
+    for (const Ctor of ctors) {
+        if (typeof Ctor === 'function') {
+            try {
+                const ctx = new Ctor();
+                console.log('AudioContext created from main window constructor.');
+                return ctx;
+            } catch (e) {
+                console.error('Constructor failed:', e);
+            }
+        }
     }
 
-    // Case 1: Standard Constructor
-    if (typeof globalAC === 'function') {
-        try {
-            const ctx = new globalAC();
-            console.log('AudioContext created from constructor.');
+    // 2. Check if window.AudioContext is actually a pre-existing instance (Polyfill/Shim)
+    if (window.AudioContext && typeof window.AudioContext === 'object' && typeof window.AudioContext.createOscillator === 'function') {
+        console.log('Using window.AudioContext as instance.');
+        return window.AudioContext;
+    }
+
+    // 3. Last Resort: Try to get a clean AudioContext from an iframe (bypasses some injections)
+    try {
+        console.log('Attempting iframe fallback for AudioContext...');
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+        const cleanWindow = iframe.contentWindow;
+
+        const CleanCtor = cleanWindow.AudioContext || cleanWindow.webkitAudioContext;
+        if (typeof CleanCtor === 'function') {
+            const ctx = new CleanCtor();
+            console.log('AudioContext created from clean iframe.');
+            // Don't remove iframe immediately or context might die in some browsers?
+            // Actually, keep it but hidden.
             return ctx;
-        } catch (e) {
-            console.error('AudioContext constructor failed:', e);
-            return null;
         }
+        document.body.removeChild(iframe);
+    } catch (e) {
+        console.error('Iframe fallback failed:', e);
     }
 
-    // Case 2: Pre-instantiated Object (Polyfills/WebViews)
-    if (typeof globalAC === 'object') {
-        if (typeof globalAC.createOscillator === 'function') {
-            console.log('AudioContext is a pre-existing instance.');
-            return globalAC;
-        }
-        console.warn('AudioContext global is an object but lacks createOscillator.');
-    }
-
-    console.warn('Web Audio API global found but unusable type:', typeof globalAC);
+    console.warn('Web Audio API absolutely not supported or blocked.');
     return null;
 };
 
