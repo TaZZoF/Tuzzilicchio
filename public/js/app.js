@@ -10,32 +10,35 @@ const useAudio = () => useContext(AudioContext);
 // Sound effect URLs (using Web Audio API with oscillators as fallback)
 // Sound effect URLs (using Web Audio API with oscillators as fallback)
 const createAudioContext = () => {
-    const AudioThing = window.AudioContext || window.webkitAudioContext;
+    const globalAC = window.AudioContext || window.webkitAudioContext;
 
-    if (!AudioThing) {
-        console.warn('Web Audio API not supported (AudioContext not found).');
+    if (!globalAC) {
+        console.warn('Web Audio API not supported (Global undefined).');
         return null;
     }
 
-    // Case 1: It's already an instance (some environments/polyfills)
-    if (typeof AudioThing === 'object' && typeof AudioThing.createOscillator === 'function') {
-        console.log('AudioContext is already an instance.');
-        return AudioThing;
-    }
-
-    // Case 2: It's a constructor (Standard)
-    if (typeof AudioThing === 'function') {
+    // Case 1: Standard Constructor
+    if (typeof globalAC === 'function') {
         try {
-            const ctx = new AudioThing();
-            console.log('AudioContext created successfully from constructor.');
+            const ctx = new globalAC();
+            console.log('AudioContext created from constructor.');
             return ctx;
         } catch (e) {
-            console.error('Failed to initialize AudioContext from constructor:', e);
+            console.error('AudioContext constructor failed:', e);
             return null;
         }
     }
 
-    console.warn('Web Audio API found but unrecognized type:', typeof AudioThing);
+    // Case 2: Pre-instantiated Object (Polyfills/WebViews)
+    if (typeof globalAC === 'object') {
+        if (typeof globalAC.createOscillator === 'function') {
+            console.log('AudioContext is a pre-existing instance.');
+            return globalAC;
+        }
+        console.warn('AudioContext global is an object but lacks createOscillator.');
+    }
+
+    console.warn('Web Audio API global found but unusable type:', typeof globalAC);
     return null;
 };
 
