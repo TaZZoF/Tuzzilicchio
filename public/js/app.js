@@ -10,26 +10,33 @@ const useAudio = () => useContext(AudioContext);
 // Sound effect URLs (using Web Audio API with oscillators as fallback)
 // Sound effect URLs (using Web Audio API with oscillators as fallback)
 const createAudioContext = () => {
-    const AudioCtor = window.AudioContext || window.webkitAudioContext;
+    const AudioThing = window.AudioContext || window.webkitAudioContext;
 
-    if (!AudioCtor) {
+    if (!AudioThing) {
         console.warn('Web Audio API not supported (AudioContext not found).');
         return null;
     }
 
-    if (typeof AudioCtor !== 'function') {
-        console.warn('Web Audio API found but not a constructor. Type:', typeof AudioCtor);
-        return null;
+    // Case 1: It's already an instance (some environments/polyfills)
+    if (typeof AudioThing === 'object' && typeof AudioThing.createOscillator === 'function') {
+        console.log('AudioContext is already an instance.');
+        return AudioThing;
     }
 
-    try {
-        const ctx = new AudioCtor();
-        console.log('AudioContext created successfully.');
-        return ctx;
-    } catch (e) {
-        console.error('Failed to initialize AudioContext:', e);
-        return null;
+    // Case 2: It's a constructor (Standard)
+    if (typeof AudioThing === 'function') {
+        try {
+            const ctx = new AudioThing();
+            console.log('AudioContext created successfully from constructor.');
+            return ctx;
+        } catch (e) {
+            console.error('Failed to initialize AudioContext from constructor:', e);
+            return null;
+        }
     }
+
+    console.warn('Web Audio API found but unrecognized type:', typeof AudioThing);
+    return null;
 };
 
 const AudioProvider = ({ children }) => {
