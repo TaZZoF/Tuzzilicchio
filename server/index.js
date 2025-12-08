@@ -156,7 +156,8 @@ function startServer() {
 
       socket.emit('roomJoined', {
         roomCode: roomCode.toUpperCase(),
-        playerId
+        playerId,
+        gameState: game.getGameState(socket.id)
       });
 
       broadcastGameState(roomCode.toUpperCase());
@@ -338,34 +339,47 @@ function startServer() {
 
     // Disconnect handling
     socket.on('disconnect', () => {
-      console.log(`Player disconnected: ${socket.id}`);
+      console.log(`Socket disconnected: ${socket.id}`);
 
       if (socket.roomCode) {
         const game = rooms.get(socket.roomCode);
         if (game) {
           const player = game.getPlayer(socket.id);
-          const playerName = player?.name || 'Un giocatore';
 
-          game.removePlayer(socket.id);
-
-          if (game.players.length === 0) {
-            rooms.delete(socket.roomCode);
-            console.log(`Room ${socket.roomCode} deleted (empty)`);
-          } else {
-            broadcastGameState(socket.roomCode);
+          if (player) {
+            player.disconnected = true; // Mark as disconnected
             io.to(socket.roomCode).emit('notification', {
-              type: 'playerLeft',
-              message: `${playerName} ha lasciato la partita`
+              type: 'warning',
+              message: `${player.name} si è disconnesso (Grace Period)`
             });
 
-            // If game was in progress, pause it
-            if (game.gamePhase === 'playing') {
-              game.gamePhase = 'waiting';
-              io.to(socket.roomCode).emit('notification', {
-                type: 'warning',
-                message: 'Partita in pausa: un giocatore è uscito'
-              });
-            }
+            // Set timeout to remove player
+            player.disconnectTimeout = setTimeout(() => {
+              console.log(`Player ${player.name} timed out. Removing from room.`);
+              // Verify if still disconnected before removing (double check)
+              if (player.disconnected) {
+                game.removePlayer(player.socketId || socket.id); // Use current socket ID associated with player
+
+                if (game.players.length === 0) {
+                  rooms.delete(socket.roomCode);
+                  console.log(`Room ${socket.roomCode} deleted (empty)`);
+                } else {
+                  broadcastGameState(socket.roomCode);
+                  io.to(socket.roomCode).emit('notification', {
+                    type: 'playerLeft',
+                    message: `${player.name} ha abbandonato la partita (Timeout)`
+                  });
+
+                  if (game.gamePhase === 'playing') {
+                    game.gamePhase = 'waiting';
+                    io.to(socket.roomCode).emit('notification', {
+                      type: 'error',
+                      message: 'Partita terminata per abbandono.'
+                    });
+                  }
+                }
+              }
+            }, DISCONNECT_TIMEOUT);
           }
         }
       }

@@ -748,11 +748,14 @@ const Lobby = ({ sessionId }) => {
     );
 };
 
-// ============ WAITING ROOM COMPONENT ============
 const WaitingRoom = ({ gameState }) => {
-    const currentPlayer = gameState.players.find(p => p.socketId === socket.id);
+    if (!gameState) return <div className="text-white text-center mt-10">Caricamento stanza...</div>;
+
+    const currentPlayer = gameState.players ? gameState.players.find(p => p.socketId === socket.id) : null;
     const [copied, setCopied] = useState(false);
     const { playSound } = useAudio();
+
+    if (!currentPlayer) return <div className="text-white text-center mt-10">Errore: Giocatore non trovato. Prova a ricaricare.</div>;
 
     const handleReady = () => {
         playSound('click');
@@ -1303,6 +1306,7 @@ const App = () => {
 
         socket.on('roomJoined', (data) => {
             // data.roomCode, data.isCreator, data.playerId
+            console.log('Room Joined:', data);
             setPlayerId(data.playerId);
             setView('waiting');
             setGameState(data.gameState); // Ensure gameState is set on join
