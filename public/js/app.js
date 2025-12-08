@@ -1293,6 +1293,14 @@ const App = () => {
         setSessionId(storedSession);
 
         // 2. Setup Global Socket Listeners
+        socket.on('roomCreated', (data) => {
+            // data.roomCode, data.isCreator, data.playerId, data.gameState
+            setPlayerId(data.playerId);
+            setView('waiting');
+            setGameState(data.gameState);
+            localStorage.setItem('tuzzilicchio_lastRoom', data.roomCode);
+        });
+
         socket.on('roomJoined', (data) => {
             // data.roomCode, data.isCreator, data.playerId
             setPlayerId(data.playerId);
@@ -1301,7 +1309,7 @@ const App = () => {
             localStorage.setItem('tuzzilicchio_lastRoom', data.roomCode); // Store last room for reconnect
         });
 
-        socket.on('gameStateUpdate', (state) => {
+        socket.on('gameState', (state) => {
             setGameState(state);
             if (state.gamePhase === 'playing') {
                 setView('game');
@@ -1359,8 +1367,9 @@ const App = () => {
         }, 500);
 
         return () => {
+            socket.off('roomCreated');
             socket.off('roomJoined');
-            socket.off('gameStateUpdate');
+            socket.off('gameState');
             socket.off('roundEnd');
             socket.off('gameEnd');
             socket.off('reconnected');
@@ -1389,8 +1398,9 @@ const App = () => {
     );
 };
 
-// ============ RENDER WITH AUDIO PROVIDER ============
-    </AudioProvider >
+// ============ RENDER ============
+const AppWithProviders = () => (
+    <App />
 );
 
 ReactDOM.createRoot(document.getElementById('root')).render(<AppWithProviders />);

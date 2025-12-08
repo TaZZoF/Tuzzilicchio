@@ -127,7 +127,11 @@ function startServer() {
         socket.roomCode = roomCode.toUpperCase();
         socket.playerId = existingPlayer.id; // Store the game's playerId on the socket
 
-        socket.emit('roomJoined', { roomCode: roomCode.toUpperCase(), playerId: existingPlayer.id });
+        socket.emit('roomJoined', {
+          roomCode: roomCode.toUpperCase(),
+          playerId: existingPlayer.id,
+          gameState: game.getGameState(socket.id)
+        });
         broadcastGameState(roomCode.toUpperCase());
         console.log(`Player ${playerName} (session ${sessionId}) reconnected to ${roomCode.toUpperCase()}`);
         return;
