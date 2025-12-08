@@ -358,7 +358,7 @@ const useCardSize = () => {
 };
 
 // ============ EMOTES ============
-const EMOTES = ['😎', '😡', '😂', '🤘'];
+const EMOTES = ['😎', '🍀', '😂', '😡', '🤘', '💩', '🖕'];
 
 const FloatingEmote = ({ emoji, onComplete }) => {
     useEffect(() => {
@@ -676,51 +676,53 @@ const Lobby = () => {
     return (
         <div className="min-h-screen flex items-center justify-center p-4">
             <SettingsButton />
-            <div className="relative bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl p-6 w-full max-w-sm">
-                <div className="text-center mb-5">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-700 rounded-xl shadow-lg mb-3">
-                        <span className="text-3xl">🃏</span>
+            <div className="glass-panel relative p-8 w-full max-w-sm">
+                <div className="text-center mb-8">
+                    <div className="inline-flex items-center justify-center w-24 h-24 mb-4 transform hover:scale-105 transition-transform duration-300">
+                        <img src="favicon.svg" alt="Tuzzilicchio Logo" className="w-full h-full drop-shadow-2xl filter" />
                     </div>
-                    <h1 className="title-font text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-700 to-emerald-600">Tuzzilicchio</h1>
-                    <p className="text-gray-500 text-sm mt-1">Scopa napoletana con varianti</p>
+                    <h1 className="title-font text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-800 to-teal-600 mb-2" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.1)' }}>
+                        TUZZILICCHIO
+                    </h1>
+                    <p className="text-gray-600 font-medium text-sm tracking-wide">SCOPA NAPOLETANA</p>
                 </div>
 
                 {error && (
-                    <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-3 py-2 rounded-lg mb-3 flex items-center gap-2 text-sm">
+                    <div className="bg-red-50 border-1 border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 flex items-center gap-2 text-sm shadow-sm animate-pulse">
                         <span>⚠️</span><span>{error}</span>
                     </div>
                 )}
 
-                <div className="space-y-3">
-                    <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">👤</span>
-                        <input type="text" placeholder="Il tuo nome" value={playerName} onChange={(e) => setPlayerName(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none text-base bg-gray-50 focus:bg-white min-h-[44px]" maxLength={20} />
+                <div className="space-y-4">
+                    <div className="relative group">
+                        <span className="input-icon text-gray-500 group-focus-within:text-emerald-400 transition-colors">👤</span>
+                        <input type="text" placeholder="IL TUO NOME" value={playerName} onChange={(e) => setPlayerName(e.target.value)}
+                            className="w-full pl-12 pr-4 py-4 border border-gray-200/20 rounded-xl focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none text-lg bg-gray-900/40 text-white placeholder-gray-400 backdrop-blur-sm transition-all shadow-inner" maxLength={20} />
                     </div>
 
                     {!isJoining ? (
                         <>
                             <button onClick={handleCreate} disabled={isLoading}
-                                className="w-full btn-primary text-white font-bold py-3 px-4 rounded-xl text-base flex items-center justify-center gap-2 disabled:opacity-50">
-                                {isLoading ? '⏳ Creazione...' : '🎮 Crea Partita'}
+                                className="w-full btn-modern btn-primary text-white font-bold py-4 px-6 rounded-xl text-lg shadow-lg flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed transform active:scale-95 transition-transform">
+                                {isLoading ? '⏳ Creazione...' : '🎮 CREA PARTITA'}
                             </button>
                             <button onClick={() => { playSound('click'); setIsJoining(true); }}
-                                className="w-full btn-secondary text-white font-bold py-3 px-4 rounded-xl text-base flex items-center justify-center gap-2">
-                                🚪 Unisciti
+                                className="w-full btn-modern btn-secondary text-white font-bold py-4 px-6 rounded-xl text-lg shadow-lg flex items-center justify-center gap-2 transform active:scale-95 transition-transform">
+                                🚪 UNISCITI
                             </button>
                         </>
                     ) : (
                         <>
-                            <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔑</span>
-                                <input type="text" placeholder="Codice Stanza" value={roomCode} onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                                    className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none text-lg tracking-[0.2em] text-center font-mono bg-gray-50 focus:bg-white min-h-[44px]" maxLength={5} />
+                            <div className="relative group">
+                                <span className="input-icon text-gray-500 group-focus-within:text-blue-400 transition-colors">🔑</span>
+                                <input type="text" placeholder="CODICE STANZA" value={roomCode} onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                                    className="w-full pl-12 pr-4 py-4 border border-gray-200/20 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none text-xl tracking-[0.2em] text-center font-mono bg-gray-900/40 text-white placeholder-gray-400 backdrop-blur-sm transition-all shadow-inner" maxLength={5} />
                             </div>
                             <button onClick={handleJoin} disabled={isLoading}
-                                className="w-full btn-secondary text-white font-bold py-3 px-4 rounded-xl text-base flex items-center justify-center gap-2 disabled:opacity-50">
-                                {isLoading ? '⏳ Connessione...' : '✅ Entra'}
+                                className="w-full btn-modern btn-secondary text-white font-bold py-4 px-6 rounded-xl text-lg shadow-lg flex items-center justify-center gap-2 disabled:opacity-70 transform active:scale-95 transition-transform">
+                                {isLoading ? '⏳ Connessione...' : '✅ ENTRA'}
                             </button>
-                            <button onClick={() => { playSound('click'); setIsJoining(false); }} className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-xl">← Indietro</button>
+                            <button onClick={() => { playSound('click'); setIsJoining(false); }} className="w-full text-white/50 hover:text-white font-medium py-2 px-4 rounded-xl text-sm transition-colors">← Torna Indietro</button>
                         </>
                     )}
                 </div>
@@ -1057,7 +1059,7 @@ const GameTable = ({ gameState }) => {
                     </div>
 
                     {/* Player hand */}
-                    <div className="flex justify-center gap-1 sm:gap-2 mb-2 overflow-x-auto py-1 px-2">
+                    <div className="flex justify-center gap-1 sm:gap-2 mb-2 overflow-x-auto py-1 px-2 hand-container">
                         {currentPlayer?.hand.map((card, idx) => (
                             <Card
                                 key={card.id}
