@@ -645,7 +645,7 @@ const LastMoveOverlay = ({ lastAction, isVisible, onHide }) => {
     );
 };
 // ============ LOBBY COMPONENT ============
-const Lobby = () => {
+const Lobby = ({ sessionId }) => {
     const [playerName, setPlayerName] = useState('');
     const [roomCode, setRoomCode] = useState('');
     const [isJoining, setIsJoining] = useState(false);
@@ -653,19 +653,27 @@ const Lobby = () => {
     const [isLoading, setIsLoading] = useState(false);
     const { playSound } = useAudio();
 
+    useEffect(() => {
+        // Recover name if previously used
+        const savedName = localStorage.getItem('tuzzilicchio_playerName');
+        if (savedName) setPlayerName(savedName);
+    }, []);
+
     const handleCreate = () => {
         if (!playerName.trim()) { setError('Inserisci un nome'); return; }
+        localStorage.setItem('tuzzilicchio_playerName', playerName.trim());
         playSound('click');
         setIsLoading(true);
-        socket.emit('createRoom', { playerName: playerName.trim() });
+        socket.emit('createRoom', { playerName: playerName.trim(), sessionId });
     };
 
     const handleJoin = () => {
         if (!playerName.trim()) { setError('Inserisci un nome'); return; }
         if (!roomCode.trim()) { setError('Inserisci il codice stanza'); return; }
+        localStorage.setItem('tuzzilicchio_playerName', playerName.trim());
         playSound('click');
         setIsLoading(true);
-        socket.emit('joinRoom', { roomCode: roomCode.trim(), playerName: playerName.trim() });
+        socket.emit('joinRoom', { roomCode: roomCode.trim(), playerName: playerName.trim(), sessionId });
     };
 
     useEffect(() => {
@@ -1267,46 +1275,122 @@ const RoundEnd = ({ scores, gamePhase, winner }) => {
     );
 };
 
-// ============ MAIN APP COMPONENT ============
+// ============ APP COMPONENT ============
 const App = () => {
+    const [view, setView] = useState('lobby'); // lobby, waiting, game
     const [gameState, setGameState] = useState(null);
-    const [inRoom, setInRoom] = useState(false);
-    const [roundEndData, setRoundEndData] = useState(null);
+    const [playerId, setPlayerId] = useState(null);
+    const [sessionId, setSessionId] = useState(null);
+    const [roundEndData, setRoundEndData] = useState(null); // Keep this for round/game end display
 
     useEffect(() => {
-        socket.on('roomCreated', (data) => { setInRoom(true); setGameState(data.gameState); });
-        socket.on('roomJoined', () => { setInRoom(true); });
-        socket.on('gameState', (state) => { setGameState(state); if (state.gamePhase === 'playing') setRoundEndData(null); });
-        socket.on('roundEnd', (data) => { setRoundEndData(data); });
-        socket.on('gameEnd', (data) => { setRoundEndData({ ...data, gamePhase: 'gameEnd', winner: data.winner, scores: data.finalScores }); });
+        // 1. Init Session ID
+        let storedSession = localStorage.getItem('tuzzilicchio_sessionId');
+        if (!storedSession) {
+            storedSession = 'sess_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+            localStorage.setItem('tuzzilicchio_sessionId', storedSession);
+        }
+        setSessionId(storedSession);
 
-        return () => { socket.off('roomCreated'); socket.off('roomJoined'); socket.off('gameState'); socket.off('roundEnd'); socket.off('gameEnd'); };
+        // 2. Setup Global Socket Listeners
+        socket.on('roomJoined', (data) => {
+            // data.roomCode, data.isCreator, data.playerId
+            setPlayerId(data.playerId);
+            setView('waiting');
+            setGameState(data.gameState); // Ensure gameState is set on join
+            localStorage.setItem('tuzzilicchio_lastRoom', data.roomCode); // Store last room for reconnect
+        });
+
+        socket.on('gameStateUpdate', (state) => {
+            setGameState(state);
+            if (state.gamePhase === 'playing') {
+                setView('game');
+                setRoundEndData(null); // Clear round end data when game is playing
+            } else if (state.gamePhase === 'waiting') {
+                setView('waiting');
+            }
+            // If gamePhase is 'roundEnd' or 'gameEnd', it will be handled by specific listeners
+        });
+
+        socket.on('roundEnd', (data) => {
+            setRoundEndData(data);
+            setView('game'); // Stay on game view to show round end modal/component
+        });
+
+        socket.on('gameEnd', (data) => {
+            setRoundEndData({ ...data, gamePhase: 'gameEnd', winner: data.winner, scores: data.finalScores });
+            setView('game'); // Stay on game view to show game end modal/component
+        });
+
+        socket.on('reconnected', (data) => {
+            console.log('Reconnected successfully to', data.roomCode);
+            setGameState(data.gameState);
+            setPlayerId(data.playerId); // Server should send back the persistent player ID
+            localStorage.setItem('tuzzilicchio_lastRoom', data.roomCode); // Update last room
+            if (data.gameState.gamePhase === 'playing') {
+                setView('game');
+                setRoundEndData(null);
+            } else if (data.gameState.gamePhase === 'waiting') {
+                setView('waiting');
+            } else if (data.gameState.gamePhase === 'roundEnd' || data.gameState.gamePhase === 'gameEnd') {
+                // If reconnected during round/game end, display it
+                setRoundEndData(data.roundEndData || { scores: data.gameState.players.map(p => ({ playerName: p.name, totalScore: p.score })), gamePhase: data.gameState.gamePhase, winner: data.gameState.winner });
+                setView('game');
+            }
+        });
+
+        socket.on('sessionExpired', () => {
+            console.log('Session expired or no active game found.');
+            localStorage.removeItem('tuzzilicchio_lastRoom'); // Cleanup
+            setView('lobby'); // Go back to lobby
+            setGameState(null);
+            setPlayerId(null);
+            setRoundEndData(null);
+        });
+
+        // 3. Attempt Auto-Reconnect
+        // Minimal delay to ensure socket is ready
+        setTimeout(() => {
+            const lastRoom = localStorage.getItem('tuzzilicchio_lastRoom');
+            if (storedSession && lastRoom) {
+                console.log('Attempting auto-reconnect with session:', storedSession, 'to room:', lastRoom);
+                socket.emit('reconnectAttempt', { sessionId: storedSession, roomCode: lastRoom });
+            }
+        }, 500);
+
+        return () => {
+            socket.off('roomJoined');
+            socket.off('gameStateUpdate');
+            socket.off('roundEnd');
+            socket.off('gameEnd');
+            socket.off('reconnected');
+            socket.off('sessionExpired');
+        };
     }, []);
-
-    if (!inRoom) return <Lobby />;
 
     if (roundEndData) return <RoundEnd scores={roundEndData.scores} gamePhase={roundEndData.gamePhase} winner={roundEndData.winner} />;
 
-    if (!gameState) return (
-        <div className="min-h-screen flex items-center justify-center">
-            <div className="text-center">
-                <div className="inline-block animate-spin text-5xl mb-3">🃏</div>
-                <p className="text-white text-lg">Caricamento...</p>
-            </div>
-        </div>
+    // Render different views based on the 'view' state
+    return (
+        <AudioProvider>
+            {view === 'lobby' && <Lobby sessionId={sessionId} />}
+            {view === 'waiting' && <WaitingRoom gameState={gameState} />}
+            {view === 'game' && <GameTable gameState={gameState} />}
+            {/* Fallback for initial loading or unexpected state */}
+            {view !== 'lobby' && view !== 'waiting' && view !== 'game' && (
+                <div className="min-h-screen flex items-center justify-center">
+                    <div className="text-center">
+                        <div className="inline-block animate-spin text-5xl mb-3">🃏</div>
+                        <p className="text-white text-lg">Caricamento...</p>
+                    </div>
+                </div>
+            )}
+        </AudioProvider>
     );
-
-    if (gameState.gamePhase === 'waiting') return <WaitingRoom gameState={gameState} />;
-    if (gameState.gamePhase === 'playing') return <GameTable gameState={gameState} />;
-
-    return <div className="min-h-screen flex items-center justify-center"><div className="text-white">Stato: {gameState.gamePhase}</div></div>;
 };
 
 // ============ RENDER WITH AUDIO PROVIDER ============
-const AppWithProviders = () => (
-    <AudioProvider>
-        <App />
-    </AudioProvider>
+    </AudioProvider >
 );
 
 ReactDOM.createRoot(document.getElementById('root')).render(<AppWithProviders />);

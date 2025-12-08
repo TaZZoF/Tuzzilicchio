@@ -66,13 +66,24 @@ function startServer() {
   io.on('connection', (socket) => {
     console.log(`Player connected: ${socket.id}`);
 
+    // --- Persistence Helpers ---
+    const DISCONNECT_TIMEOUT = 120000; // 2 minutes grace period
+
+    const getRoomByPlayerSession = (sessionId) => {
+      for (const [code, game] of rooms.entries()) {
+        const player = game.players.find(p => p.sessionId === sessionId);
+        if (player) return { game, player, code };
+      }
+      return null;
+    };
+
     // Create a new room
-    socket.on('createRoom', ({ playerName }) => {
+    socket.on('createRoom', ({ playerName, sessionId }) => {
       const roomCode = generateRoomCode();
       const game = new TuzzilicchioGame(roomCode);
-      const playerId = uuidv4();
+      const playerId = uuidv4(); // This is the player's unique ID for the game
 
-      const player = game.addPlayer(playerId, playerName, socket.id);
+      const player = game.addPlayer(playerId, playerName, socket.id, sessionId);
       if (!player) {
         socket.emit('error', { message: 'Impossibile creare la stanza' });
         return;
@@ -81,7 +92,7 @@ function startServer() {
       rooms.set(roomCode, game);
       socket.join(roomCode);
       socket.roomCode = roomCode;
-      socket.playerId = playerId;
+      socket.playerId = playerId; // Store the game's playerId on the socket
 
       socket.emit('roomCreated', {
         roomCode,
@@ -93,11 +104,32 @@ function startServer() {
     });
 
     // Join an existing room
-    socket.on('joinRoom', ({ roomCode, playerName }) => {
+    socket.on('joinRoom', ({ roomCode, playerName, sessionId }) => {
       const game = rooms.get(roomCode.toUpperCase());
 
       if (!game) {
         socket.emit('error', { message: 'Stanza non trovata' });
+        return;
+      }
+
+      // Check if THIS session is already in the room (Reconnection)
+      const existingPlayer = game.players.find(p => p.sessionId === sessionId);
+      if (existingPlayer) {
+        // It's a reconnection!
+        if (existingPlayer.disconnectTimeout) {
+          clearTimeout(existingPlayer.disconnectTimeout); // Cancel deletion
+          delete existingPlayer.disconnectTimeout;
+        }
+        existingPlayer.socketId = socket.id; // Update socket
+        existingPlayer.disconnected = false;
+
+        socket.join(roomCode.toUpperCase());
+        socket.roomCode = roomCode.toUpperCase();
+        socket.playerId = existingPlayer.id; // Store the game's playerId on the socket
+
+        socket.emit('roomJoined', { roomCode: roomCode.toUpperCase(), playerId: existingPlayer.id });
+        broadcastGameState(roomCode.toUpperCase());
+        console.log(`Player ${playerName} (session ${sessionId}) reconnected to ${roomCode.toUpperCase()}`);
         return;
       }
 
@@ -107,7 +139,7 @@ function startServer() {
       }
 
       const playerId = uuidv4();
-      const player = game.addPlayer(playerId, playerName, socket.id);
+      const player = game.addPlayer(playerId, playerName, socket.id, sessionId);
 
       if (!player) {
         socket.emit('error', { message: 'Stanza piena (max 4 giocatori)' });
@@ -131,6 +163,35 @@ function startServer() {
       });
 
       console.log(`${playerName} joined room ${roomCode.toUpperCase()}`);
+    });
+
+    socket.on('reconnectAttempt', ({ sessionId }) => {
+      const found = getRoomByPlayerSession(sessionId);
+      if (found) {
+        const { game, player, code } = found;
+
+        // Cancel timeout
+        if (player.disconnectTimeout) {
+          clearTimeout(player.disconnectTimeout);
+          delete player.disconnectTimeout;
+        }
+
+        player.socketId = socket.id;
+        player.disconnected = false;
+        socket.join(code);
+        socket.roomCode = code;
+        socket.playerId = player.id; // Store the game's playerId on the socket
+
+        socket.emit('reconnected', {
+          roomCode: code,
+          playerId: player.id,
+          gameState: game.getGameState(socket.id)
+        });
+        broadcastGameState(code);
+        console.log(`Session ${sessionId} auto-reconnected to ${code}`);
+      } else {
+        socket.emit('sessionExpired');
+      }
     });
 
     // Player ready
