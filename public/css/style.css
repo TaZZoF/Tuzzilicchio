@@ -510,6 +510,13 @@
             opacity: 1 !important;
         }
 
+        /* Force Placeholder Visibility */
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.6) !important;
+            opacity: 1;
+            /* Firefox */
+        }
+
         /* Emotes */
         .emote-menu {
             bottom: 110%;
