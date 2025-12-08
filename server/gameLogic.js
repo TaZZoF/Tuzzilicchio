@@ -87,10 +87,11 @@ class Deck {
 }
 
 class Player {
-  constructor(id, name, socketId) {
+  constructor(id, name, socketId, sessionId) {
     this.id = id;
     this.name = name;
     this.socketId = socketId;
+    this.sessionId = sessionId; // Store persistent session ID
     this.hand = [];
     this.captures = [];
     this.scope = 0;
@@ -151,11 +152,11 @@ class TuzzilicchioGame {
     this.dealerIndex = 0;
   }
 
-  addPlayer(id, name, socketId) {
+  addPlayer(id, name, socketId, sessionId) {
     if (this.players.length >= 4) return null;
     if (this.gamePhase !== 'waiting') return null;
 
-    const player = new Player(id, name, socketId);
+    const player = new Player(id, name, socketId, sessionId);
     this.players.push(player);
     return player;
   }
