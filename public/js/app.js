@@ -1381,7 +1381,11 @@ const App = () => {
         };
     }, []);
 
-    if (roundEndData) return <RoundEnd scores={roundEndData.scores} gamePhase={roundEndData.gamePhase} winner={roundEndData.winner} />;
+    if (roundEndData) return (
+        <AudioProvider>
+            <RoundEnd scores={roundEndData.scores} gamePhase={roundEndData.gamePhase} winner={roundEndData.winner} />
+        </AudioProvider>
+    );
 
     // Render different views based on the 'view' state
     return (
